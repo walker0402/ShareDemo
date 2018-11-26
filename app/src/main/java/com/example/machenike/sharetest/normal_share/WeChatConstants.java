@@ -11,5 +11,5 @@ public class WeChatConstants {
     /**
      * 替换成项目对应的app_id
      */
-    public static final String APP_ID = "wx88888888";
+    public static final String APP_ID = "wx27e6c7ee4a76383c";
 }
