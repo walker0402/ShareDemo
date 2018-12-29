@@ -41,8 +41,7 @@ import java.util.concurrent.CountDownLatch;
  * <p>
  * 微信的缩略图大小不可大于32k，无效时控制台会输出，checkArgs fail, thumbData is invalid的错误，请控制资源图大小
  */
-public enum ShareUtils {
-    INSTANCE;
+public class ShareUtils {
 
     private ShareDialog shareDialog;
 
@@ -79,6 +78,7 @@ public enum ShareUtils {
 
     public void share() {
         shareDialog.show();
+
     }
 
     private ShareListener checkCallBack() {
@@ -341,32 +341,50 @@ public enum ShareUtils {
         @Override
         public void onWbShareSuccess() {
             mShareListener.onSuccess(PlatForm.SINA);
+            if (mContext!=null){
+                mContext = null;
+            }
         }
 
         @Override
         public void onWbShareCancel() {
             mShareListener.onCancel(PlatForm.SINA);
+            if (mContext!=null){
+                mContext = null;
+            }
         }
 
         @Override
         public void onWbShareFail() {
             mShareListener.onError(PlatForm.SINA);
+            if (mContext!=null){
+                mContext = null;
+            }
         }
 
         //QQ分享回调
         @Override
         public void onComplete(Object o) {
             mShareListener.onSuccess(PlatForm.QQ);
+            if (mContext!=null){
+                mContext = null;
+            }
         }
 
         @Override
         public void onError(UiError uiError) {
             mShareListener.onError(PlatForm.QQ);
+            if (mContext!=null){
+                mContext = null;
+            }
         }
 
         @Override
         public void onCancel() {
             mShareListener.onCancel(PlatForm.QQ);
+            if (mContext!=null){
+                mContext = null;
+            }
         }
 
 

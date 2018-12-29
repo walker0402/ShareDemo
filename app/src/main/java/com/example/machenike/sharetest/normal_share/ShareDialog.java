@@ -23,7 +23,7 @@ public class ShareDialog extends Dialog implements View.OnClickListener {
 
     private Context mContext;
 
-    public ShareDialog(@NonNull Context context, @NonNull OnShareClickListener onShareClickListener) {
+    ShareDialog(@NonNull Context context, @NonNull OnShareClickListener onShareClickListener) {
         super(context, R.style.AppDialog_Bottom);
         this.onShareClickListener = onShareClickListener;
         this.mContext = context;
@@ -63,6 +63,9 @@ public class ShareDialog extends Dialog implements View.OnClickListener {
             onShareClickListener.onClick(PlatForm.QQ);
         }
         dismiss();
+        if (mContext != null) {
+            mContext = null;
+        }
     }
 
     public interface OnShareClickListener {
