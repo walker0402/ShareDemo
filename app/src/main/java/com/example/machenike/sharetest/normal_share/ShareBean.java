@@ -12,6 +12,16 @@ import java.io.IOException;
  * description 支持分享文本跟网页
  */
 public class ShareBean {
+
+    /**
+     * 分享类型， 1 纯文本，2 链接， 3 图片
+     */
+    public final int type;
+
+    public ShareBean(int type) {
+        this.type = type;
+    }
+
     /**
      * 分享标题
      */
@@ -27,19 +37,51 @@ public class ShareBean {
     private String url;
 
     /**
-     * 分享的图片，resource
+     * 分享的图片缩略图，resource
      */
-    private int icon_res;
+    private int thumbRes;
 
     /**
-     * 分享的图片，bitmap
+     * 分享的图片缩略图，bitmap
      */
-    private Bitmap shareBitmap;
+    private Bitmap thumbBitmap;
 
     /**
-     * 分享的图片，url
+     * 分享的图片缩略图，url
      */
-    private String pic_url;
+    private String thumbPicUrl;
+
+    /**
+     * 分享大图
+     */
+    private Bitmap pictureBitmap;
+    private String pictureUrl;
+    private int pictureRes;
+
+
+    public void setPicture(Bitmap picture) {
+        this.pictureBitmap = picture;
+    }
+
+    public void setPicture(String picture) {
+        this.pictureUrl = picture;
+    }
+
+    public void setPicture(int picture) {
+        this.pictureRes = picture;
+    }
+
+    public Bitmap getPictureBitmap() {
+        return pictureBitmap;
+    }
+
+    public String getPictureUrl() {
+        return pictureUrl;
+    }
+
+    public int getPictureRes() {
+        return pictureRes;
+    }
 
     public String getTitle() {
         return title;
@@ -65,27 +107,29 @@ public class ShareBean {
         this.url = url;
     }
 
-    public int getIcon_res() {
-        return icon_res;
+    public void setThumb(int thumbRes) {
+        this.thumbRes = thumbRes;
     }
 
-    public void setIcon_res(int icon_res) {
-        this.icon_res = icon_res;
+    public void setThumb(Bitmap bitmap) {
+        this.thumbBitmap = bitmap;
     }
 
-    public Bitmap getShareBitmap() {
-        return shareBitmap;
+    public void setThumb(String url) {
+        this.thumbPicUrl = url;
     }
 
-    public void setShareBitmap(Bitmap shareBitmap) {
-        this.shareBitmap = shareBitmap;
+    public int getThumbRes() {
+        return thumbRes;
     }
 
-    public String getPic_url() {
-        return pic_url;
+    public Bitmap getThumbBitmap() {
+        return thumbBitmap;
     }
 
-    public void setPic_url(String pic_url) {
-        this.pic_url = pic_url;
+    public String getThumbPicUrl() {
+        return thumbPicUrl;
     }
+
+
 }

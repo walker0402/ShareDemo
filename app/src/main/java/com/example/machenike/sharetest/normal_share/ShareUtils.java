@@ -9,6 +9,7 @@ import android.util.Log;
 import android.widget.Toast;
 
 import com.example.machenike.sharetest.R;
+import com.sina.weibo.sdk.api.ImageObject;
 import com.sina.weibo.sdk.api.TextObject;
 import com.sina.weibo.sdk.api.WebpageObject;
 import com.sina.weibo.sdk.api.WeiboMultiMessage;
@@ -17,6 +18,7 @@ import com.sina.weibo.sdk.share.WbShareHandler;
 import com.sina.weibo.sdk.utils.Utility;
 import com.tencent.connect.share.QQShare;
 import com.tencent.mm.opensdk.modelmsg.SendMessageToWX;
+import com.tencent.mm.opensdk.modelmsg.WXImageObject;
 import com.tencent.mm.opensdk.modelmsg.WXMediaMessage;
 import com.tencent.mm.opensdk.modelmsg.WXTextObject;
 import com.tencent.mm.opensdk.modelmsg.WXWebpageObject;
@@ -50,22 +52,15 @@ public class ShareUtils {
 
     private ShareAction action;
 
+    private Activity mContext;
 
-    /**
-     * @param context
-     * @param bean
-     * @param callback 如果不实现，传null
-     * @return
-     */
-    public ShareUtils init(final Activity context, final ShareBean bean, ShareListener callback) {
-        mCallBack = callback;
-        shareDialog = new ShareDialog(context, new ShareDialog.OnShareClickListener() {
-            @Override
-            public void onClick(PlatForm platForm) {
-                action = new ShareAction(context).setPlatForm(platForm).setShareData(bean).setCallBack(checkCallBack());
-                action.share();
-            }
-        });
+    public ShareUtils(final Activity context) {
+        this.mContext = context;
+        action = new ShareAction(context);
+    }
+
+    public ShareUtils setCallBack(ShareListener callback) {
+        this.mCallBack = callback;
         return this;
     }
 
@@ -76,7 +71,14 @@ public class ShareUtils {
         return action;
     }
 
-    public void share() {
+    public void share(final ShareBean bean) {
+        shareDialog = new ShareDialog(mContext, new ShareDialog.OnShareClickListener() {
+            @Override
+            public void onClick(PlatForm platForm) {
+                action.setPlatForm(platForm).setShareData(bean).setCallBack(checkCallBack());
+                action.share();
+            }
+        });
         shareDialog.show();
 
     }
@@ -171,27 +173,39 @@ public class ShareUtils {
                 return;
             }
             Bundle bundle = new Bundle();
-            //这条分享消息被好友点击后的跳转URL。
-            bundle.putString(QQShare.SHARE_TO_QQ_TARGET_URL, mShareBean.getUrl());
-            //分享的标题。注：PARAM_TITLE、PARAM_IMAGE_URL、PARAM_ SUMMARY不能全为空，最少必须有一个是有值的。
-            bundle.putString(QQShare.SHARE_TO_QQ_TITLE, mShareBean.getTitle());
-            bundle.putString(QQShare.SHARE_TO_QQ_SUMMARY, mShareBean.getSummary());
-
-            //QQ分享图片只能分享手机本地图片或者网络图片
-            if (null != mShareBean.getShareBitmap()) {
-                //如果bitmap不是null，存到本地后取出
-                String filePath = Utils.saveBitmap(mContext, mShareBean.getShareBitmap());
-                bundle.putString(QQShare.SHARE_TO_QQ_IMAGE_LOCAL_URL, filePath);
-            } else if (0 != mShareBean.getIcon_res()) {
-                String filePath = Utils.saveBitmap(mContext, Utils.compressBitmap(BitmapFactory.decodeResource(mContext.getResources(), mShareBean.getIcon_res())));
-                bundle.putString(QQShare.SHARE_TO_QQ_IMAGE_LOCAL_URL, filePath);
-            } else if (!TextUtils.isEmpty(mShareBean.getPic_url())) {
-                //否则查看是否有设置网络图片url
-                bundle.putString(QQShare.SHARE_TO_QQ_IMAGE_URL, mShareBean.getPic_url());
-            } else {
-                String filePath = Utils.saveBitmap(mContext, Utils.compressBitmap(BitmapFactory.decodeResource(mContext.getResources(), R.mipmap.ic_launcher)));
+            if (mShareBean.type == 1) {
+                //文字
+                bundle.putInt(QQShare.SHARE_TO_QQ_KEY_TYPE, QQShare.SHARE_TO_QQ_TYPE_DEFAULT);
+            } else if (mShareBean.type == 2) {
+                //链接
+                bundle.putInt(QQShare.SHARE_TO_QQ_KEY_TYPE, QQShare.SHARE_TO_QQ_TYPE_DEFAULT);
+                //这条分享消息被好友点击后的跳转URL。
+                bundle.putString(QQShare.SHARE_TO_QQ_TARGET_URL, mShareBean.getUrl());
+                //分享的标题。注：PARAM_TITLE、PARAM_IMAGE_URL、PARAM_ SUMMARY不能全为空，最少必须有一个是有值的。
+                bundle.putString(QQShare.SHARE_TO_QQ_TITLE, mShareBean.getTitle());
+                bundle.putString(QQShare.SHARE_TO_QQ_SUMMARY, mShareBean.getSummary());
+                //QQ分享图片只能分享手机本地图片或者网络图片,此处只是缩略图
+                if (null != mShareBean.getThumbBitmap()) {
+                    //如果bitmap不是null，存到本地后取出
+                    String filePath = Utils.saveBitmap(mContext, mShareBean.getThumbBitmap());
+                    bundle.putString(QQShare.SHARE_TO_QQ_IMAGE_LOCAL_URL, filePath);
+                } else if (0 != mShareBean.getThumbRes()) {
+                    String filePath = Utils.saveBitmap(mContext, Utils.compressBitmap(BitmapFactory.decodeResource(mContext.getResources(), mShareBean.getThumbRes())));
+                    bundle.putString(QQShare.SHARE_TO_QQ_IMAGE_LOCAL_URL, filePath);
+                } else if (!TextUtils.isEmpty(mShareBean.getThumbPicUrl())) {
+                    //否则查看是否有设置网络图片url
+                    bundle.putString(QQShare.SHARE_TO_QQ_IMAGE_URL, mShareBean.getThumbPicUrl());
+                } else {
+                    String filePath = Utils.saveBitmap(mContext, Utils.compressBitmap(BitmapFactory.decodeResource(mContext.getResources(), R.mipmap.ic_launcher)));
+                    bundle.putString(QQShare.SHARE_TO_QQ_IMAGE_LOCAL_URL, filePath);
+                }
+            } else if (mShareBean.type == 3) {
+                //图片
+                bundle.putInt(QQShare.SHARE_TO_QQ_KEY_TYPE, QQShare.SHARE_TO_QQ_TYPE_IMAGE);
+                String filePath = Utils.saveBitmap(mContext, Utils.compressBitmap(mShareBean.getPictureBitmap()));
                 bundle.putString(QQShare.SHARE_TO_QQ_IMAGE_LOCAL_URL, filePath);
             }
+
 
             tencent.shareToQQ(mContext, bundle, this);
 
@@ -206,50 +220,34 @@ public class ShareUtils {
                 return;
             }
 
-            WXMediaMessage msg;
-            if (TextUtils.isEmpty(mShareBean.getUrl())) {
+            WXMediaMessage msg = null;
+            if (mShareBean.type == 1) {
                 //分享文本
                 WXTextObject textObject = new WXTextObject();
                 textObject.text = mShareBean.getTitle();
                 msg = new WXMediaMessage(textObject);
-            } else {
-                //有分享url，分享网页
+            } else if (mShareBean.type == 2) {
+                //分享网页
                 WXWebpageObject webPageObject = new WXWebpageObject();
                 webPageObject.webpageUrl = mShareBean.getUrl();
                 msg = new WXMediaMessage(webPageObject);
+                msg.title = mShareBean.getTitle();
+                msg.description = mShareBean.getSummary();
 
-                //缩略图
-                //先直接取mShareBean里的bitmap
-                if (null != mShareBean.getShareBitmap()) {
-                    bitmap = Utils.compressBitmap(mShareBean.getShareBitmap());
-                } else if (0 != mShareBean.getIcon_res()) {
-                    //没有则取设置的资源图
-                    bitmap = Utils.compressBitmap(BitmapFactory.decodeResource(mContext.getResources(), mShareBean.getIcon_res()));
-                } else if (null != mShareBean.getPic_url()) {
-                    //如果有设置网络图片，等待网络图片加载返回，否则等待
-                    //声明一个闭锁数
-                    final CountDownLatch countDownLatch = new CountDownLatch(1);
-                    new Thread(new Runnable() {
-                        @Override
-                        public void run() {
-                            bitmap = Utils.getBitmapFromUrl(mShareBean.getPic_url());
-                            countDownLatch.countDown();
-                        }
-                    }).start();
-                    try {
-                        countDownLatch.await();
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                } else {
-                    //直接取ic_launcherd作为bitmap
-                    bitmap = BitmapFactory.decodeResource(mContext.getResources(), R.mipmap.ic_launcher);
+
+                msg.thumbData = Utils.bitmapToByteArray(bitmap = Utils.compressBitmap(getThumbBitmap(), 32));
+            } else if (mShareBean.type == 3) {
+                //分享图片
+                if (null == mShareBean.getPictureBitmap()) {
+                    throw new RuntimeException("图片分享请设置pictures");
                 }
-                msg.thumbData = Utils.bitmapToByteArray(bitmap);
+                Bitmap bmp = Utils.compressBitmap(mShareBean.getPictureBitmap(), 10 * 1024);
+                WXImageObject imgObj = new WXImageObject(bmp);
+                msg = new WXMediaMessage(imgObj);
+                //设置缩略图
+                Bitmap thumbBmp = Bitmap.createScaledBitmap(bmp, bmp.getWidth() / 2, bmp.getHeight() / 2, true);
+                msg.thumbData = Utils.bitmapToByteArray(bitmap = Utils.compressBitmap(thumbBmp, 32));
             }
-
-            msg.title = mShareBean.getTitle();
-            msg.description = mShareBean.getSummary();
 
             SendMessageToWX.Req req = new SendMessageToWX.Req();
             req.message = msg;
@@ -271,13 +269,19 @@ public class ShareUtils {
             wbShareHandler.registerApp();
             WeiboMultiMessage weiboMessage = new WeiboMultiMessage();
             //根据ShareBean有没有分享链接来判断分享的是文本还是网页
-            if (TextUtils.isEmpty(mShareBean.getUrl())) {
+            if (mShareBean.type == 1) {
                 //分享文本
                 weiboMessage.textObject = getTextObj();
-            } else {
+            } else if (mShareBean.type == 2) {
+                //网页
                 weiboMessage.mediaObject = getWebpageObj();
+            } else if (mShareBean.type == 3) {
+                //图片
+                if (null == mShareBean.getPictureBitmap()) {
+                    throw new RuntimeException("图片分享请设置pictures");
+                }
+                weiboMessage.imageObject = getImageObject();
             }
-
             wbShareHandler.shareMessage(weiboMessage, false);
         }
 
@@ -294,54 +298,70 @@ public class ShareUtils {
             return textObject;
         }
 
+        //微博分享图片
+        private ImageObject getImageObject() {
+            ImageObject imageObject = new ImageObject();
+            Bitmap bitmap = mShareBean.getPictureBitmap();
+            imageObject.setImageObject(bitmap);
+            return imageObject;
+        }
+
         /**
          * 微博分享网页
          *
          * @return
          */
-        Bitmap bitmap = null;
-
         private WebpageObject getWebpageObj() {
             final WebpageObject mediaObject = new WebpageObject();
             mediaObject.identify = Utility.generateGUID();
             mediaObject.title = mShareBean.getTitle();
             mediaObject.description = mShareBean.getSummary();
             mediaObject.actionUrl = mShareBean.getUrl();
+            mediaObject.setThumbImage(getThumbBitmap());
+            return mediaObject;
+        }
 
-            if (null != mShareBean.getShareBitmap()) {
-                bitmap = Utils.compressBitmap(mShareBean.getShareBitmap());
-            } else if (0 != mShareBean.getIcon_res()) {
+
+        Bitmap bitmap;
+
+        //获取缩略图bitmap
+        private Bitmap getThumbBitmap() {
+            if (null != mShareBean.getThumbBitmap()) {
+                return Utils.compressBitmap(mShareBean.getThumbBitmap());
+            } else if (0 != mShareBean.getThumbRes()) {
                 //没有则取设置的资源图
-                bitmap = Utils.compressBitmap(BitmapFactory.decodeResource(mContext.getResources(), mShareBean.getIcon_res()));
-            } else if (null != mShareBean.getPic_url()) {
+                return Utils.compressBitmap(BitmapFactory.decodeResource(mContext.getResources(), mShareBean.getThumbRes()));
+            } else if (null != mShareBean.getThumbPicUrl()) {
                 //如果有设置网络图片，等待网络图片加载返回，否则等待
                 //声明一个闭锁数
                 final CountDownLatch countDownLatch = new CountDownLatch(1);
                 new Thread(new Runnable() {
                     @Override
                     public void run() {
-                        bitmap = Utils.getBitmapFromUrl(mShareBean.getPic_url());
+                        bitmap = Utils.getBitmapFromUrl(mShareBean.getThumbPicUrl());
                         countDownLatch.countDown();
                     }
                 }).start();
                 try {
                     countDownLatch.await();
+                    if (null != bitmap) {
+                        return bitmap;
+                    }
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
             } else {
                 //直接取ic_launcherd作为bitmap
-                bitmap = BitmapFactory.decodeResource(mContext.getResources(), R.mipmap.ic_launcher);
+                return BitmapFactory.decodeResource(mContext.getResources(), R.mipmap.ic_launcher);
             }
-            mediaObject.setThumbImage(bitmap);
-            return mediaObject;
+            return null;
         }
 
         //微博分享回调
         @Override
         public void onWbShareSuccess() {
             mShareListener.onSuccess(PlatForm.SINA);
-            if (mContext!=null){
+            if (mContext != null) {
                 mContext = null;
             }
         }
@@ -349,7 +369,7 @@ public class ShareUtils {
         @Override
         public void onWbShareCancel() {
             mShareListener.onCancel(PlatForm.SINA);
-            if (mContext!=null){
+            if (mContext != null) {
                 mContext = null;
             }
         }
@@ -357,7 +377,7 @@ public class ShareUtils {
         @Override
         public void onWbShareFail() {
             mShareListener.onError(PlatForm.SINA);
-            if (mContext!=null){
+            if (mContext != null) {
                 mContext = null;
             }
         }
@@ -366,7 +386,7 @@ public class ShareUtils {
         @Override
         public void onComplete(Object o) {
             mShareListener.onSuccess(PlatForm.QQ);
-            if (mContext!=null){
+            if (mContext != null) {
                 mContext = null;
             }
         }
@@ -374,7 +394,7 @@ public class ShareUtils {
         @Override
         public void onError(UiError uiError) {
             mShareListener.onError(PlatForm.QQ);
-            if (mContext!=null){
+            if (mContext != null) {
                 mContext = null;
             }
         }
@@ -382,7 +402,7 @@ public class ShareUtils {
         @Override
         public void onCancel() {
             mShareListener.onCancel(PlatForm.QQ);
-            if (mContext!=null){
+            if (mContext != null) {
                 mContext = null;
             }
         }

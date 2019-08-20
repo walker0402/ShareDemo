@@ -7,6 +7,7 @@ import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
 
 import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -104,15 +105,45 @@ public class Utils {
             int length = http.getContentLength();
             conn.connect();            // 获得图像的字符流
             InputStream is = conn.getInputStream();
-            BufferedInputStream bis = new BufferedInputStream(is, length);
-            bm = BitmapFactory.decodeStream(bis);
-            bis.close();
+//            BufferedInputStream bis = new BufferedInputStream(is, length);
+            ByteArrayOutputStream outStream = new ByteArrayOutputStream();
+            byte[] buffer = new byte[1024];
+            int len = 0;
+            while( (len=is.read(buffer)) != -1){
+                outStream.write(buffer, 0, len);
+            }
+            bm = BitmapFactory.decodeByteArray(outStream.toByteArray(), 0, outStream.toByteArray().length);
+            outStream.close();
             is.close();
             // 关闭流
         } catch (Exception e) {
             e.printStackTrace();
         }
         return bm;
+    }
+
+    /**
+     * 微信分享缩略图必须小于32k
+     * @param bitmap
+     * @param sizeLimit
+     * @return
+     */
+    public static Bitmap compressBitmap(Bitmap bitmap, long sizeLimit) {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        int quality = 100;
+        bitmap.compress(Bitmap.CompressFormat.JPEG, quality, baos);
+
+        // 循环判断压缩后图片是否超过限制大小
+        while(baos.toByteArray().length / 1024 >= sizeLimit) {
+            // 清空baos
+            baos.reset();
+            bitmap.compress(Bitmap.CompressFormat.JPEG, quality, baos);
+            quality -= 10;
+        }
+
+        Bitmap newBitmap = BitmapFactory.decodeStream(new ByteArrayInputStream(baos.toByteArray()), null, null);
+
+        return newBitmap;
     }
 
 
