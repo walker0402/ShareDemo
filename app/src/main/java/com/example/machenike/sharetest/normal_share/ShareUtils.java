@@ -349,12 +349,13 @@ public class ShareUtils {
                     }
                 } catch (InterruptedException e) {
                     e.printStackTrace();
+                    return BitmapFactory.decodeResource(mContext.getResources(), R.mipmap.ic_launcher);
                 }
             } else {
                 //直接取ic_launcherd作为bitmap
                 return BitmapFactory.decodeResource(mContext.getResources(), R.mipmap.ic_launcher);
             }
-            return null;
+            return BitmapFactory.decodeResource(mContext.getResources(), R.mipmap.ic_launcher);
         }
 
         //微博分享回调
